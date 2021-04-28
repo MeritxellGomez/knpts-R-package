@@ -1,16 +1,38 @@
-cvknpts <- function(ts, h, n, kmax){
+cvknpts <- function(ts, h, n, kmax, dist){
 
   #ESCOGER X FECHAS (5 POR DEFECTO) Y PREDECIR PARA K DESDE 1 A KMAX
 
   slices <- caret::createTimeSlices(y = ts, initialWindow = length(ts)/10, horizon = n, fixedWindow = FALSE)
   #la salida de esto son dos elementos $train y $test. En cada uno hay todas las posibles slices. Habría que coger al azar X de esas slices
 
-  #sampleslices <- meter X numeros random desde 1 hasta el numero de slices que se hayan creado
-
-  slices$train[sampleslices]
-  slices$test[sampleslices]
+  sampleslices <- sample(length(slices$train), repetitions)
 
   #funcion que pruebe los valores de k y escoja la mejor
+  for (i in sampleslices){
+
+    trainperiods <- slices$train[i]
+
+    horizon <- horizon(trainperiods, h)
+
+    distances <- distance_knn(trainperiods, horizon, n, dist)
+
+    #y coger las k mas pequeñas con sus n siguientes valores
+    for (j in 1:kmax){
+
+      kneighbors <- distances[1:j,]
+
+    }
+
+    #guardar para el test i el mejor valor j y el error obtenido
+
+    #combinar los n siguientes valores y meter en un vector de predicciones
+    predictions <- predictknn(ts, kneighbors = kneighbors, n, pond)
+
+    testperiods <- slices$test[i]
+
+
+  }
+
 
   #devolver data frame con las k, rmse, dtw, edr
 
