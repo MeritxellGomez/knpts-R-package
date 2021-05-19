@@ -1,32 +1,44 @@
 #' Make predictions using KNPTS (K-Nearest Patterns in Time Series)
 #'
-#' @param ts
-#' @param h
-#' @param n
+#' @param ts univariate time series
+#' @param h number of points in the horizon series
+#' @param n number of points to be predicted
+#' @param kmax maximum number of neighbours to be tested in the cross validation
+#' @param dist name of the distance function
+#' @param repeats number of partitions in the cross validation
+#' @param pond logical if the average should be ponderated or not
+#' @param strategy mimo or recursive strategy to forecast
+#' @param metric error metric to calculate and compare the accuracy in cross validation
 #'
-#' @return model
+#' @return predictions
 #' @export
 #'
 #' @examples
-predictKNPTS <- function(ts, h = 5, n = 3, kmax = 10, dist = 'Euclidean', pond = FALSE){
+predictKNPTS <- function(ts, h = 5, n = 3, kmax = 10, dist = 'Euclidean', repeats = 3, pond = FALSE, strategy = 'mimo', metric = 'rmse'){
 
-  #coger los h ultimos valores de la serie
+  # get last h values of the time series
   horizon <- horizon(ts, h)
-  print(horizon)
 
-  #CV para escoger la mejor k. De momento pongo k=3 hasta que esté hecha la funcion de crossvalidation
-  kopt <- 3
+  # choose the best k value doing time series cross validation
+  kopt <- cvknpts(ts = ts, h = h, n = n, kmax = kmax, dist = dist, repeats = repeats, pond = pond, metric = metric)
 
-  #calcular las distancias
-  distances <- distance_knn(ts, horizon, n, dist)
-  print(distances)
+  # choose the strategy to get estimations of the future values
+  if(strategy == 'mimo'){
 
-  #y coger las k mas pequeñas con sus n siguientes valores
-  kneighbors <- distances[1:kopt,]
-  print(kneighbors)
+    # MultiInput MultiOutput Strategy
+    distances <- distance_knn(ts, horizon, n, dist)
+    kneighbors <- distances[1:kopt,]
 
-  #combinar los n siguientes valores y meter en un vector de predicciones
-  predictions <- predictknn(ts, kneighbors = kneighbors, n, pond)
+    predictions <- predictknn_mimo(ts, kneighbors = kneighbors, n, pond)
+
+  }else if(strategy == 'recursive'){
+
+    # Recursive Strategy (each estimated point is used as input in the next iteration)
+    predictions <- predictknn_recursive(ts, horizon = horizon, h = h, n = n, pond = pond, dist = dist, kopt = kopt)
+
+  }else{
+    stop('incorrect name for strategy argument')
+  }
 
   return(predictions)
 

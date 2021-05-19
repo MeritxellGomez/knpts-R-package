@@ -1,15 +1,21 @@
 # Introduction 
-TODO: Give a short introduction of your project. Let this section explain the objectives or the motivation behind this project. 
+KNPTS package provides the estimations for further values in a univariate time series based on the patterns found in the historical data. 
 
 # Getting Started
-TODO: Guide users through getting your code up and running on their own system. In this section you can talk about:
 1.	Installation process
+
+Users can install KNPTS package using this instruction in R 
+
+install.packages("devtools") # if you have not installed "devtools" package
+devtools::install_github()
+
+
 2.	Software dependencies
-3.	Latest releases
-4.	API references
+This package was built using the R version 3.6.3
 
 # Build and Test
-TODO: Describe and show how to build your code and run the tests. 
+The main function predictKNPTS is executated to provide the forecasts
+
 
 # Contribute
 TODO: Explain how other users and developers can contribute to make your code better. 
