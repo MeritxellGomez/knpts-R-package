@@ -1,16 +1,19 @@
-cvknpts <- function(ts, h, n, kmax, dist){
-
-  #ESCOGER X FECHAS (5 POR DEFECTO) Y PREDECIR PARA K DESDE 1 A KMAX
+cvknpts <- function(ts, h, n, kmax, dist, repeats, pond, metric){
 
   slices <- caret::createTimeSlices(y = ts, initialWindow = length(ts)/10, horizon = n, fixedWindow = FALSE)
   #la salida de esto son dos elementos $train y $test. En cada uno hay todas las posibles slices. Habría que coger al azar X de esas slices
 
-  sampleslices <- sample(length(slices$train), repetitions)
+  set.seed(123)
+  sampleslices <- sample(length(slices$train), repeats)
+
+  errors <- data.frame(matrix(NA, nrow = repeats, ncol = kmax))
+  colnames(errors) <- paste('k =', 1:kmax)
 
   #funcion que pruebe los valores de k y escoja la mejor
-  for (i in sampleslices){
+  for (i in 1:repeats){
 
-    trainperiods <- slices$train[i]
+    trainperiods <- ts[slices$train[[sampleslices[i]]]]
+    testperiods <- ts[slices$test[[sampleslices[i]]]]
 
     horizon <- horizon(trainperiods, h)
 
@@ -21,48 +24,26 @@ cvknpts <- function(ts, h, n, kmax, dist){
 
       kneighbors <- distances[1:j,]
 
+      #con cada k calculo los errores y los guardo en error de la fecha i con j vecinos
+
+      name_iteration <- paste0('k', j, 'd', i)
+
+      predictions <- predictknn_mimo(ts, kneighbors = kneighbors, n, pond)
+
+      if(metric == 'rmse'){
+        errors[i,j] <- ModelMetrics::rmse(predictions, testperiods)
+      }
+
     }
-
-    #guardar para el test i el mejor valor j y el error obtenido
-
-    #combinar los n siguientes valores y meter en un vector de predicciones
-    predictions <- predictknn(ts, kneighbors = kneighbors, n, pond)
-
-    testperiods <- slices$test[i]
 
 
   }
 
+  errors_df <- apply(errors, 2, mean)
 
-  #devolver data frame con las k, rmse, dtw, edr
+  kopt <- as.numeric(stringr::str_extract(names(which(errors_df == min(errors_df))), '[0-9]{1}'))
 
-  #o devolver la mejor k? bueno esto para un futuro próximo
+  return(kopt)
+
 
 }
-
-
-# cvknn <- function(df.train, df.test, output_var_name, h, npred, kmax, pond){
-#
-#   dknn_complete <- distance_knn(df.train[[output_var_name]], h=h, npred=npred)
-#
-#   rmse <- vector(length = kmax)
-#   dtw <- vector(length = kmax)
-#   EDR <- vector(length = kmax)
-#
-#   for(k in 1:kmax){
-#
-#     dknn <- kneighbors(dknn_complete, k)
-#     pred <- predict.knn(df.train[[output_var_name]], dknn, npred = npred, pond = pond)
-#
-#     dpred <- data.frame(df.test[1:npred,], pred=as.vector(pred))
-#
-#     rmse[k] <- ModelMetrics::rmse(dpred[[output_var_name]], dpred[['pred']])
-#     dtw[k] <- d_dtw(dpred[[output_var_name]], dpred[['pred']])
-#     #EDR[k] <- d_EDR(dpred[[output_var_name]], dpred[['pred']], eps = 20)
-#   }
-#
-#   results<- data.frame(k=c(1:kmax), RMSE = rmse, DTW = dtw, EDR = EDR)
-#
-#   return(results)
-#
-# }
