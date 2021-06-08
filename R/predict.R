@@ -15,7 +15,11 @@ predictknn_mimo <- function(ts, kneighbors, n, pond){
 
   #hacer la media por indice
 
-  if(0 %in% kneighbors[['distances']]){pond==FALSE}
+  if(0 %in% kneighbors[['distances']]){
+    pond <- FALSE
+  }else{
+    pond <- pond
+  }
 
   if(pond){
     w <- (1/(kneighbors[['distances']])^2)
